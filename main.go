@@ -1,11 +1,9 @@
 package stormRider
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"strconv"
-	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/earmuff-jam/ciri-stormrider/types"
@@ -17,7 +15,7 @@ import (
 // Creates JWT token and returns the valid token
 // Expiration time: 15 mins ( default )
 // BaseKey: Unique UUID used to sign the JWT. If not passed in, default UUID from utils is used.
-func CreateJWT(draftUser *types.UserCredentials, expiryTime string, baseKey string) (*types.UserCredentials, error) {
+func CreateJWT(creds *types.Credentials, expiryTime string, baseKey string) (*types.Credentials, error) {
 
 	formattedExpiryTime, err := strconv.ParseInt(expiryTime, 10, 64)
 	if err != nil {
@@ -28,20 +26,15 @@ func CreateJWT(draftUser *types.UserCredentials, expiryTime string, baseKey stri
 		baseKey = string(utils.BASE_LICENSE_KEY)
 	}
 
-	draftUser.ExpirationTime = time.Now().Add(time.Duration(formattedExpiryTime) * time.Minute)
-	draftUser.StandardClaims = jwt.StandardClaims{
-		ExpiresAt: draftUser.ExpirationTime.Unix(),
-	}
-
 	jwtTokenString, err := utils.BuildVerificationToken(int(formattedExpiryTime), baseKey)
 	if err != nil {
 		log.Printf("unable to create jwt verification token. error: %+v", err)
 		return nil, err
 	}
-	draftUser.LicenceKey = string(baseKey)
-	draftUser.PreBuiltToken = jwtTokenString
+	creds.LicenceKey = string(baseKey)
+	creds.Cookie = jwtTokenString
 
-	return draftUser, nil
+	return creds, nil
 }
 
 // ValidateJWT...
@@ -73,20 +66,13 @@ func ValidateJWT(cookie string, baseLicenseKey string) (bool, error) {
 // RefreshToken ...
 //
 // Refresh the jwt token if it is within 30 seconds of expiry time
-func RefreshToken(timeToLive time.Time, additionalTime string, baseKey string) (string, error) {
+func RefreshToken(additionalTime string, baseKey string) (string, error) {
 
-	formattedTimeToLive := time.Until(timeToLive)
-
-	if formattedTimeToLive <= 30*time.Second && formattedTimeToLive > 0 {
-
-		tokenStr, err := utils.RefreshVerificationToken(additionalTime, baseKey)
-		if err != nil {
-			log.Printf("unable to refresh token. error %+v", err)
-			return "", err
-		}
-
-		return tokenStr, nil
+	tokenStr, err := utils.RefreshVerificationToken(additionalTime, baseKey)
+	if err != nil {
+		log.Printf("unable to refresh token. error %+v", err)
+		return "", err
 	}
 
-	return "", errors.New("expired token detected. invalidating token")
+	return tokenStr, nil
 }
