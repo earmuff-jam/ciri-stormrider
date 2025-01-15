@@ -70,3 +70,17 @@ func RefreshToken(creds *types.Credentials, baseKey string) (string, error) {
 
 	return tokenStr, nil
 }
+
+// ParseJwtToken ...
+//
+// Parse the provided jwt token and return the credentials
+// BaseKey: Unique UUID used to sign the JWT. If not passed in, default UUID from utils is used.
+func ParseJwtToken(token, baseKey string) (*types.Credentials, error) {
+
+	creds, err := utils.ParseJwtToken(token, baseKey)
+	if err != nil {
+		log.Printf("unable to parse provided jwt token. error: %+v", err)
+		return nil, err
+	}
+	return creds, nil
+}

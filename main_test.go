@@ -82,3 +82,24 @@ func Test_RefreshToken(t *testing.T) {
 	assert.NoError(t, err)
 	assert.GreaterOrEqual(t, len(tokenStr), 20)
 }
+
+func Test_ParseJwtToken(t *testing.T) {
+
+	draftUserCredentials := types.Credentials{
+		Claims: jwt.StandardClaims{
+			ExpiresAt: DurationOfValidity,
+			Subject:   "test_user",
+		},
+	}
+
+	resp, err := CreateJWT(&draftUserCredentials, "")
+	assert.NoError(t, err)
+	assert.Equal(t, resp.LicenceKey, string(utils.BASE_LICENSE_KEY))
+	assert.GreaterOrEqual(t, len(resp.Cookie), 20)
+
+	parsedResp, err := ParseJwtToken(resp.Cookie, "")
+	assert.NoError(t, err)
+	assert.Equal(t, parsedResp.Cookie, resp.Cookie)
+	assert.Equal(t, parsedResp.LicenceKey, resp.LicenceKey)
+	assert.Equal(t, parsedResp.Claims.Subject, "test_user")
+}

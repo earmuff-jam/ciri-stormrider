@@ -21,13 +21,6 @@ func Test_BuildVerificationToken(t *testing.T) {
 	assert.NoError(t, err)
 	assert.GreaterOrEqual(t, len(resp), 20)
 
-	token, err := jwt.ParseWithClaims(resp, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(baseLicenseKey), nil
-	})
-
-	assert.NoError(t, err)
-	assert.True(t, token.Valid)
-
 }
 
 func Test_RefreshVerificationToken(t *testing.T) {
@@ -97,5 +90,46 @@ func Test_RefreshVerificationToken_WithNegativeDurationOfValidity(t *testing.T) 
 
 	assert.Error(t, err)
 	assert.False(t, token.Valid)
+
+}
+
+func Test_ParseJwtToken(t *testing.T) {
+
+	durationOfValidity := 15
+	baseLicenseKey := string(BASE_LICENSE_KEY)
+
+	customClaims := jwt.StandardClaims{
+		ExpiresAt: int64(durationOfValidity),
+		Subject:   "test_user",
+	}
+
+	resp, err := BuildVerificationToken(customClaims, baseLicenseKey)
+
+	assert.NoError(t, err)
+	assert.GreaterOrEqual(t, len(resp), 20)
+
+	parsedResp, err := ParseJwtToken(resp, "")
+	assert.NoError(t, err)
+	assert.Equal(t, parsedResp.Claims.Subject, "test_user")
+
+}
+
+func Test_ParseJwtToken_InvalidDurationOfValidity(t *testing.T) {
+
+	durationOfValidity := -1
+	baseLicenseKey := string(BASE_LICENSE_KEY)
+
+	customClaims := jwt.StandardClaims{
+		ExpiresAt: int64(durationOfValidity),
+		Subject:   "test_user",
+	}
+
+	resp, err := BuildVerificationToken(customClaims, baseLicenseKey)
+
+	assert.NoError(t, err)
+	assert.GreaterOrEqual(t, len(resp), 20)
+
+	_, err = ParseJwtToken(resp, "")
+	assert.Error(t, err)
 
 }
