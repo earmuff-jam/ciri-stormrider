@@ -3,7 +3,6 @@ package stormRider
 import (
 	"fmt"
 	"log"
-	"strconv"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/earmuff-jam/ciri-stormrider/types"
@@ -13,20 +12,14 @@ import (
 // CreateJWT...
 //
 // Creates JWT token and returns the valid token
-// Expiration time: 15 mins ( default )
 // BaseKey: Unique UUID used to sign the JWT. If not passed in, default UUID from utils is used.
-func CreateJWT(creds *types.Credentials, expiryTime string, baseKey string) (*types.Credentials, error) {
-
-	formattedExpiryTime, err := strconv.ParseInt(expiryTime, 10, 64)
-	if err != nil {
-		formattedExpiryTime = 15
-	}
+func CreateJWT(creds *types.Credentials, baseKey string) (*types.Credentials, error) {
 
 	if len(baseKey) <= 0 {
 		baseKey = string(utils.BASE_LICENSE_KEY)
 	}
 
-	jwtTokenString, err := utils.BuildVerificationToken(int(formattedExpiryTime), baseKey)
+	jwtTokenString, err := utils.BuildVerificationToken(creds.Claims, baseKey)
 	if err != nil {
 		log.Printf("unable to create jwt verification token. error: %+v", err)
 		return nil, err
@@ -65,10 +58,11 @@ func ValidateJWT(cookie string, baseLicenseKey string) (bool, error) {
 
 // RefreshToken ...
 //
-// Refresh the jwt token if it is within 30 seconds of expiry time
-func RefreshToken(additionalTime string, baseKey string) (string, error) {
+// Refresh the jwt token and returns the valid token
+// BaseKey: Unique UUID used to sign the JWT. If not passed in, default UUID from utils is used.
+func RefreshToken(creds *types.Credentials, baseKey string) (string, error) {
 
-	tokenStr, err := utils.RefreshVerificationToken(additionalTime, baseKey)
+	tokenStr, err := utils.RefreshVerificationToken(creds.Claims, baseKey)
 	if err != nil {
 		log.Printf("unable to refresh token. error %+v", err)
 		return "", err

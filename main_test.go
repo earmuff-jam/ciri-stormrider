@@ -1,20 +1,28 @@
 package stormRider
 
 import (
-	"strconv"
 	"testing"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/earmuff-jam/ciri-stormrider/types"
 	"github.com/earmuff-jam/ciri-stormrider/utils"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	DurationOfValidity = 15
+)
+
 func Test_CreateJWT_DefaultToken(t *testing.T) {
 
-	draftUserCredentials := types.Credentials{}
+	draftUserCredentials := types.Credentials{
+		Claims: jwt.StandardClaims{
+			ExpiresAt: DurationOfValidity,
+		},
+	}
 
-	resp, err := CreateJWT(&draftUserCredentials, "", "")
+	resp, err := CreateJWT(&draftUserCredentials, "")
 	assert.NoError(t, err)
 	assert.Equal(t, resp.LicenceKey, string(utils.BASE_LICENSE_KEY))
 	assert.GreaterOrEqual(t, len(resp.Cookie), 20)
@@ -23,19 +31,28 @@ func Test_CreateJWT_DefaultToken(t *testing.T) {
 func Test_CreateJWT_CustomToken(t *testing.T) {
 
 	draftTestUUID := uuid.New().String()
-	draftUserCredentials := types.Credentials{}
+	draftUserCredentials := types.Credentials{
+		Claims: jwt.StandardClaims{
+			ExpiresAt: DurationOfValidity,
+		},
+	}
 
-	resp, err := CreateJWT(&draftUserCredentials, "5", draftTestUUID)
+	resp, err := CreateJWT(&draftUserCredentials, draftTestUUID)
 	assert.NoError(t, err)
 	assert.Equal(t, resp.LicenceKey, draftTestUUID)
 	assert.GreaterOrEqual(t, len(resp.Cookie), 20)
 }
 
 func Test_TestValidateJWT(t *testing.T) {
-	draftTestUUID := uuid.New().String()
-	draftUserCredentials := types.Credentials{}
 
-	resp, err := CreateJWT(&draftUserCredentials, "5", draftTestUUID)
+	draftTestUUID := uuid.New().String()
+	draftUserCredentials := types.Credentials{
+		Claims: jwt.StandardClaims{
+			ExpiresAt: DurationOfValidity,
+		},
+	}
+
+	resp, err := CreateJWT(&draftUserCredentials, draftTestUUID)
 	assert.NoError(t, err)
 	assert.Equal(t, resp.LicenceKey, draftTestUUID)
 
@@ -54,7 +71,13 @@ func Test_TestValidateJWT_InvalidTokenStr(t *testing.T) {
 
 func Test_RefreshToken(t *testing.T) {
 
-	tokenStr, err := RefreshToken(strconv.Itoa(15), string(utils.BASE_LICENSE_KEY))
+	draftUserCredentials := types.Credentials{
+		Claims: jwt.StandardClaims{
+			ExpiresAt: DurationOfValidity,
+		},
+	}
+
+	tokenStr, err := RefreshToken(&draftUserCredentials, string(utils.BASE_LICENSE_KEY))
 
 	assert.NoError(t, err)
 	assert.GreaterOrEqual(t, len(tokenStr), 20)

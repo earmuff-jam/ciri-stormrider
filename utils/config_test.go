@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"strconv"
 	"testing"
 
 	"github.com/dgrijalva/jwt-go"
@@ -13,7 +12,11 @@ func Test_BuildVerificationToken(t *testing.T) {
 	durationOfValidity := 15
 	baseLicenseKey := string(BASE_LICENSE_KEY)
 
-	resp, err := BuildVerificationToken(durationOfValidity, baseLicenseKey)
+	customClaims := jwt.StandardClaims{
+		ExpiresAt: int64(durationOfValidity),
+	}
+
+	resp, err := BuildVerificationToken(customClaims, baseLicenseKey)
 
 	assert.NoError(t, err)
 	assert.GreaterOrEqual(t, len(resp), 20)
@@ -26,12 +29,17 @@ func Test_BuildVerificationToken(t *testing.T) {
 	assert.True(t, token.Valid)
 
 }
+
 func Test_RefreshVerificationToken(t *testing.T) {
 
 	durationOfValidity := 15
 	baseLicenseKey := string(BASE_LICENSE_KEY)
 
-	resp, err := RefreshVerificationToken(strconv.Itoa(durationOfValidity), baseLicenseKey)
+	customClaims := jwt.StandardClaims{
+		ExpiresAt: int64(durationOfValidity),
+	}
+
+	resp, err := RefreshVerificationToken(customClaims, baseLicenseKey)
 
 	assert.NoError(t, err)
 	assert.GreaterOrEqual(t, len(resp), 20)
@@ -50,7 +58,11 @@ func Test_RefreshVerificationToken_WithCustomToken(t *testing.T) {
 
 	durationOfValidity := 15
 
-	resp, err := RefreshVerificationToken(strconv.Itoa(durationOfValidity), "")
+	customClaims := jwt.StandardClaims{
+		ExpiresAt: int64(durationOfValidity),
+	}
+
+	resp, err := RefreshVerificationToken(customClaims, "")
 
 	assert.NoError(t, err)
 	assert.GreaterOrEqual(t, len(resp), 20)
@@ -69,7 +81,11 @@ func Test_RefreshVerificationToken_WithNegativeDurationOfValidity(t *testing.T) 
 
 	durationOfValidity := -1
 
-	resp, err := RefreshVerificationToken(strconv.Itoa(durationOfValidity), string(BASE_LICENSE_KEY))
+	customClaims := jwt.StandardClaims{
+		ExpiresAt: int64(durationOfValidity),
+	}
+
+	resp, err := RefreshVerificationToken(customClaims, string(BASE_LICENSE_KEY))
 
 	assert.NoError(t, err)
 	assert.GreaterOrEqual(t, len(resp), 20)
@@ -79,7 +95,7 @@ func Test_RefreshVerificationToken_WithNegativeDurationOfValidity(t *testing.T) 
 		return []byte(BASE_LICENSE_KEY), nil
 	})
 
-	assert.NoError(t, err)
-	assert.True(t, token.Valid)
+	assert.Error(t, err)
+	assert.False(t, token.Valid)
 
 }
